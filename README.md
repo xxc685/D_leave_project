@@ -4,7 +4,7 @@
 
 ## GitHub 仓库
 
-- 仓库地址：尚未配置。提交前必须创建 Public 仓库并将实际链接写入本报告。
+- 仓库地址：https://github.com/xxc685/D_leave_project
 - 提交要求：仓库 Visibility 必须为 **Public**，并确保未登录浏览器也能打开仓库和本 README。
 
 ## 目录说明
