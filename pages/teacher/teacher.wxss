@@ -1,0 +1,117 @@
+.container { padding: 20px; background-color: #f7f8fa; min-height: 100vh; }
+.header { font-size: 20px; font-weight: bold; text-align: center; margin-bottom: 25px; color: #333; }
+.card { background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.section-title { font-size: 17px; font-weight: bold; margin-bottom: 15px; border-left: 4px solid #4A90E2; padding-left: 10px; }
+.input-box { border: 1px solid #ebedf0; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
+.submit-btn { background: #4A90E2; color: #fff; border-radius: 8px; font-weight: bold; }
+
+.user-info { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.info-main { display: flex; flex-direction: column; gap: 6px; }
+.teacher-name { font-size: 16px; font-weight: bold; color: #333; }
+.teacher-id { font-size: 13px; color: #888; }
+.change-link { color: #4A90E2; font-size: 14px; flex-shrink: 0; }
+
+.form-item { margin-bottom: 20px; }
+.label { font-size: 15px; color: #444; margin-bottom: 10px; display: block; }
+.picker-box { background: #f9f9f9; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; font-size: 14px; }
+.picker-box.empty-tip { color: #999; justify-content: center; }
+.arrow { color: #bbb; }
+.row { display: flex; justify-content: space-between; align-items: center; }
+.tips { font-size: 12px; color: #999; margin-top: 5px; display: block; }
+.launch-btn { background: #4A90E2; color: #fff; border-radius: 8px; font-weight: bold; margin-top: 10px; }
+.qr-result { margin-top: 25px; border-top: 1px dashed #ddd; padding-top: 20px; text-align: center; }
+.qr-code-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px auto;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #4A90E2;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+  width: fit-content;
+}
+.save-qr-btn {
+  margin: 16px auto 0;
+  padding: 20rpx 0;
+  font-size: 27rpx;
+  color: #4A90E2;
+  background: transparent;
+  border: 2rpx solid #4A90E2;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 2rpx;
+}
+.save-qr-btn::after { border: none; }
+.save-qr-btn:active { background: rgba(74, 144, 226, 0.08); }
+.qr-canvas {
+  width: 250px;
+  height: 250px;
+  display: block;
+}
+.finalize-btn {
+  background: linear-gradient(135deg, #E74C3C, #C0392B);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: bold;
+  margin-top: 18px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.35);
+}
+.success-tag { color: #07c160; font-size: 14px; margin-bottom: 15px; }
+.token-display { background: #f0f7ff; padding: 15px; border-radius: 8px; }
+.token-title { font-size: 12px; color: #4A90E2; }
+.token-value { font-family: monospace; font-size: 16px; margin-top: 5px; color: #333; word-break: break-all; }
+.data-preview { font-size: 12px; color: #999; margin-top: 10px; }
+
+/* 历史签到记录 */
+.history-card { margin-bottom: 30px; }
+.history-empty { text-align: center; color: #999; font-size: 14px; padding: 24px 0; }
+.history-list { display: flex; flex-direction: column; gap: 12px; }
+.history-item {
+  background: #f9fbff;
+  border: 1px solid #e8eef5;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.history-course { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 8px; }
+.history-meta { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.history-date { font-size: 14px; color: #555; }
+.history-time { font-size: 13px; color: #888; }
+.history-footer { display: flex; justify-content: space-between; align-items: center; }
+.history-tag {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+.tag-ongoing { background: #e8f8ef; color: #07c160; }
+.tag-closed { background: #f0f0f0; color: #999; }
+.history-id { font-size: 12px; color: #aaa; }
+
+/* 请假审批 */
+.leave-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.leave-header .section-title { margin-bottom: 0; }
+.leave-refresh { padding: 6px 12px; color: #4a90e2; background: #edf5ff; border-radius: 14px; font-size: 12px; }
+.leave-refresh.disabled { color: #999; background: #f1f1f1; }
+.leave-review-list { display: flex; flex-direction: column; gap: 12px; }
+.leave-review-item { padding: 14px; border: 1px solid #e4e9f0; border-radius: 6px; background: #fafcff; }
+.leave-review-top { display: flex; justify-content: space-between; gap: 10px; }
+.leave-student, .leave-course, .leave-reason, .leave-meta, .leave-remark { display: block; }
+.leave-student { font-size: 15px; font-weight: bold; color: #333; }
+.leave-course { margin-top: 5px; font-size: 13px; color: #4a90e2; }
+.leave-status { height: fit-content; padding: 3px 9px; border-radius: 12px; font-size: 12px; flex-shrink: 0; }
+.leave-pending { color: #9a6700; background: #fff4ce; }
+.leave-approved { color: #176f3a; background: #e5f5eb; }
+.leave-rejected { color: #b42318; background: #feeceb; }
+.leave-reason { margin-top: 12px; font-size: 13px; color: #555; line-height: 1.5; }
+.leave-meta, .leave-remark { margin-top: 7px; font-size: 12px; color: #999; }
+.leave-remark { color: #596d84; }
+.leave-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #edf0f4; }
+.leave-action { min-width: 76px; border-radius: 5px; color: #fff; }
+.leave-action.reject { background: #c94b43; }
+.leave-action.approve { background: #2f7d4a; }
+.leave-action::after { border: none; }
+

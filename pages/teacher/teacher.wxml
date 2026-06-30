@@ -1,0 +1,112 @@
+<view class="container">
+  <view class="header">教师端管理中心</view>
+
+  <view class="card">
+    <view class="user-info">
+      <view class="info-main">
+        <text class="teacher-name">{{teacherName}} 老师</text>
+        <text class="teacher-id">工号：{{teacherId}}</text>
+      </view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">1. 选择教学班级 (class_id)</text>
+      <picker wx:if="{{classList.length > 0}}" bindchange="bindClassChange" value="{{classIndex}}" range="{{classList}}" range-key="name">
+        <view class="picker-box">
+          {{classList[classIndex].name}} <text class="arrow">▼</text>
+        </view>
+      </picker>
+      <view wx:else class="picker-box empty-tip">暂无授课班级，请先在后台维护数据</view>
+    </view>
+
+    <view class="form-item">
+      <text class="label">2. 签到有效时长 (分钟)</text>
+      <input class="input-box" type="number" placeholder="例如: 5" bindinput="inputDuration" />
+    </view>
+
+    <view class="form-item row">
+      <text class="label">3. 开启地理位置校验</text>
+      <switch checked="{{needLocation}}" bindchange="switchLocation" color="#4A90E2"/>
+    </view>
+
+    <view class="form-item" wx:if="{{needLocation}}">
+      <text class="label">4. 允许签到半径 (单位: 米)</text>
+      <slider min="50" max="1000" step="50" show-value value="{{radius}}" bindchange="inputRadius" />
+      <text class="tips">建议设置 100-200 米，避免室内 GPS 偏差</text>
+    </view>
+
+    <button class="launch-btn" bindtap="generateQRCode">立即发起签到</button>
+
+    <view class="qr-result" wx:if="{{qrToken}}">
+      <view class="success-tag">● 签到口令已生成，请让学生扫码</view>
+
+      <!-- 二维码画布 -->
+      <view class="qr-code-wrapper">
+        <canvas type="2d" id="qrCanvas" class="qr-canvas"></canvas>
+      </view>
+
+      <!-- 保存二维码到相册 -->
+      <button class="save-qr-btn" bindtap="saveQRCode">
+        💾 保存二维码到相册
+      </button>
+
+      <view class="token-display">
+        <text class="token-title">签到口令 (qr_token)</text>
+        <view class="token-value">{{qrToken}}</view>
+      </view>
+      <view class="data-preview">
+        基准定位状态：{{latitude ? '已记录坐标 · ' + latitude + ', ' + longitude : '未开启位置校验'}}
+      </view>
+
+      <button class="finalize-btn" bindtap="finalizeSession">⏹ 结束本次签到</button>
+    </view>
+  </view>
+
+  <view class="card leave-review-card">
+    <view class="leave-header">
+      <view class="section-title">请假审批</view>
+      <text class="leave-refresh" bindtap="refreshLeaveRequests" wx:if="{{!leaveLoading}}">刷新</text>
+      <text class="leave-refresh disabled" wx:else>加载中</text>
+    </view>
+    <view wx:if="{{leaveRequests.length === 0}}" class="history-empty">暂无请假申请</view>
+    <view wx:else class="leave-review-list">
+      <view class="leave-review-item" wx:for="{{leaveRequests}}" wx:key="request_id">
+        <view class="leave-review-top">
+          <view>
+            <text class="leave-student">{{item.student_name}}（{{item.student_id}}）</text>
+            <text class="leave-course">{{item.course_name}} · {{item.session_date}}</text>
+          </view>
+          <text class="leave-status {{item.status_cls}}">{{item.status_label}}</text>
+        </view>
+        <text class="leave-reason">请假原因：{{item.reason}}</text>
+        <text class="leave-meta">场次 #{{item.session_id}} · 提交于 {{item.submit_time}}</text>
+        <text class="leave-remark" wx:if="{{item.review_remark}}">审批备注：{{item.review_remark}}</text>
+        <view class="leave-actions" wx:if="{{item.status === 'pending'}}">
+          <button class="leave-action reject" size="mini" data-request-id="{{item.request_id}}" data-action="reject" bindtap="reviewLeave">驳回</button>
+          <button class="leave-action approve" size="mini" data-request-id="{{item.request_id}}" data-action="approve" bindtap="reviewLeave">批准</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="card history-card">
+    <view class="section-title">历史签到记录</view>
+    <view wx:if="{{historyLoading}}" class="history-empty">加载中...</view>
+    <view wx:elif="{{sessionHistory.length === 0}}" class="history-empty">暂无历史签到场次</view>
+    <view wx:else class="history-list">
+      <view class="history-item" wx:for="{{sessionHistory}}" wx:key="session_id" bindtap="viewHistorySession" data-token="{{item.qr_token}}" data-session-id="{{item.session_id}}" data-lat="{{item.location_latitude}}" data-lng="{{item.location_longitude}}">
+        <view class="history-course">{{item.course_name}}</view>
+        <view class="history-meta">
+          <text class="history-date">{{item.session_date}}</text>
+          <text class="history-time">{{item.start_time}} ~ {{item.end_time}}</text>
+        </view>
+        <view class="history-footer">
+          <text class="history-tag {{item.session_status === 'ongoing' ? 'tag-ongoing' : 'tag-closed'}}">
+            {{item.session_status === 'ongoing' ? '进行中' : '已结束'}}
+          </text>
+          <text class="history-id">场次 #{{item.session_id}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

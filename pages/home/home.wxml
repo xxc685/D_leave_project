@@ -1,0 +1,45 @@
+<view class="home-container">
+  <!-- 顶部问候语 -->
+  <view class="greeting-section">
+    <text class="greeting-text">{{greeting}}</text>
+    <text class="greeting-date">今天是美好的一天 ☀️</text>
+  </view>
+
+  <!-- 学生卡片：扫一扫签到 -->
+  <view
+    wx:if="{{role === 'student'}}"
+    class="action-card student-card"
+    bindtap="handleScan"
+    hover-class="card-hover"
+  >
+    <view class="card-icon">📷</view>
+    <view class="card-content">
+      <text class="card-title">扫一扫签到</text>
+      <text class="card-desc">扫描教师展示的二维码，完成课堂签到</text>
+    </view>
+    <view class="card-arrow">→</view>
+  </view>
+
+  <!-- 教师卡片：发起签到 -->
+  <view
+    wx:if="{{role === 'teacher'}}"
+    class="action-card teacher-card"
+    bindtap="handleTeacherAction"
+    hover-class="card-hover"
+  >
+    <view class="card-icon">📋</view>
+    <view class="card-content">
+      <text class="card-title">发起签到</text>
+      <text class="card-desc">创建签到任务，生成二维码供学生扫描</text>
+    </view>
+    <view class="card-arrow">→</view>
+  </view>
+
+  <!-- 未登录提示 -->
+  <view wx:if="{{!role}}" class="empty-state">
+    <text class="empty-icon">🔐</text>
+    <text class="empty-text">请先登录后再使用</text>
+  </view>
+
+
+</view>

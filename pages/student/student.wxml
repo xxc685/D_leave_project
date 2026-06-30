@@ -1,0 +1,86 @@
+<view class="container">
+  <view class="header">
+    <text class="title">学生签到助手</text>
+  </view>
+
+  <view class="card">
+    <view class="user-info">
+      <view class="info-row">
+        <text class="name">{{studentName}}</text>
+        <text class="id">学号: {{studentId}}</text>
+      </view>
+    </view>
+
+    <button class="scan-btn" bindtap="handleScan">
+      📷 扫一扫签到
+    </button>
+
+    <view class="status-box {{statusClass}}" wx:if="{{attendanceStatus}}">
+      <icon type="{{statusIcon}}" size="45"></icon>
+      <text class="status-text">{{attendanceStatus}}</text>
+      <text class="time-text" wx:if="{{scanTime}}">打卡时间：{{scanTime}}</text>
+      <text class="location-text" wx:if="{{locationStatus}}">定位状态：{{locationStatus}}</text>
+    </view>
+  </view>
+
+  <!-- 请假申请 -->
+  <view class="card leave-card">
+    <view class="history-title-row">
+      <view class="section-title leave-title">请假申请</view>
+      <text class="refresh-btn" bindtap="refreshLeaveData" wx:if="{{!leaveLoading}}">刷新</text>
+      <text class="refresh-btn disabled" wx:else>加载中</text>
+    </view>
+
+    <view wx:if="{{leaveOptions.length > 0}}">
+      <text class="leave-label">选择签到场次</text>
+      <picker bindchange="bindLeaveSessionChange" value="{{leaveIndex}}" range="{{leaveOptions}}" range-key="label">
+        <view class="leave-picker">{{leaveOptions[leaveIndex].label}} <text>▼</text></view>
+      </picker>
+      <text class="leave-label">请假原因</text>
+      <textarea class="leave-reason" maxlength="500" placeholder="请说明请假原因" value="{{leaveReason}}" bindinput="inputLeaveReason"></textarea>
+      <button class="leave-submit" loading="{{leaveSubmitting}}" disabled="{{leaveSubmitting}}" bindtap="submitLeaveRequest">提交请假申请</button>
+    </view>
+    <view wx:else class="history-empty">暂无可申请请假的签到场次</view>
+
+    <view class="leave-record-title">申请记录</view>
+    <view wx:if="{{leaveRequests.length === 0}}" class="history-empty">暂无请假申请</view>
+    <view wx:else class="leave-list">
+      <view class="leave-item" wx:for="{{leaveRequests}}" wx:key="request_id">
+        <view class="hi-top">
+          <text class="hi-course">{{item.course_name}} · {{item.session_date}}</text>
+          <text class="leave-status {{item.status_cls}}">{{item.status_label}}</text>
+        </view>
+        <text class="leave-reason-text">原因：{{item.reason}}</text>
+        <text class="leave-review" wx:if="{{item.review_remark}}">审批备注：{{item.review_remark}}</text>
+        <text class="leave-time">提交时间：{{item.submit_time}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- [T7] 我的签到历史 -->
+  <view class="card history-card">
+    <view class="history-title-row">
+      <view class="section-title">📋 我的签到历史</view>
+      <text class="refresh-btn" bindtap="onRefreshHistory" wx:if="{{!historyLoading}}">🔄 刷新</text>
+      <text class="refresh-btn disabled" wx:else>⏳ 加载中...</text>
+    </view>
+
+    <view wx:if="{{historyLoading}}" class="history-empty">加载中...</view>
+    <view wx:elif="{{historyList.length === 0}}" class="history-empty">暂无签到记录</view>
+    <view wx:else class="history-list">
+      <view class="history-item" wx:for="{{historyList}}" wx:key="record_id">
+        <view class="hi-top">
+          <text class="hi-course">{{item.course_name}}</text>
+          <text class="hi-tag {{item.status_cls}}">{{item.status_label}}</text>
+        </view>
+        <view class="hi-meta">
+          <text class="hi-date">📅 {{item.session_date}}</text>
+          <text class="hi-scan">🕒 {{item.scan_time}}</text>
+        </view>
+        <view class="hi-remark" wx:if="{{item.remark}}">
+          💬 {{item.remark}}
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

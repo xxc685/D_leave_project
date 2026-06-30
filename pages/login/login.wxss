@@ -1,0 +1,159 @@
+/* ========== 全局容器 ========== */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f5f7fb 0%, #ffffff 100%);
+  padding: 80rpx 48rpx 60rpx;
+  box-sizing: border-box;
+}
+
+/* ========== Logo 区域 ========== */
+.logo-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 64rpx;
+}
+
+.logo {
+  width: 140rpx;
+  height: 140rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 36rpx rgba(0, 0, 0, 0.08);
+  margin-bottom: 28rpx;
+  background: #fff;
+}
+
+.app-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: 2rpx;
+  margin-bottom: 10rpx;
+}
+
+.app-subtitle {
+  font-size: 24rpx;
+  color: #999;
+  letter-spacing: 1rpx;
+}
+
+/* ========== 身份切换 Tab ========== */
+.role-tabs {
+  display: flex;
+  width: 100%;
+  background: #f0f2f5;
+  border-radius: 20rpx;
+  padding: 8rpx;
+  margin-bottom: 48rpx;
+}
+
+.role-tab {
+  flex: 1;
+  text-align: center;
+  padding: 22rpx 0;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  color: #888;
+  transition: all 0.25s ease;
+}
+
+.role-tab.active {
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.12);
+}
+
+.role-tab.student-active {
+  background: linear-gradient(135deg, #07C160, #06AD56);
+}
+
+.role-tab.teacher-active {
+  background: linear-gradient(135deg, #4A90E2, #357ABD);
+}
+
+/* ========== 表单区域 ========== */
+.form-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 32rpx;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.input-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #333;
+  padding-left: 8rpx;
+}
+
+.input-field {
+  width: 100%;
+  height: 92rpx;
+  background: #f7f8fa;
+  border-radius: 18rpx;
+  padding: 0 28rpx;
+  font-size: 30rpx;
+  color: #1a1a2e;
+  box-sizing: border-box;
+  border: 2rpx solid transparent;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: #4A90E2;
+  background: #fff;
+}
+
+/* ========== 登录按钮 ========== */
+.login-btn {
+  width: 100%;
+  height: 96rpx;
+  border-radius: 48rpx;
+  font-size: 34rpx;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 8rpx;
+  border: none;
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-btn::after {
+  border: none;
+}
+
+.btn-student {
+  background: linear-gradient(135deg, #07C160 0%, #06AD56 100%);
+  box-shadow: 0 12rpx 32rpx rgba(7, 193, 96, 0.35);
+}
+
+.btn-teacher {
+  background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+  box-shadow: 0 12rpx 32rpx rgba(74, 144, 226, 0.35);
+}
+
+.login-btn-hover {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+
+/* ========== 底部提示 ========== */
+.footer-tip {
+  margin-top: 48rpx;
+}
+
+.footer-tip text {
+  font-size: 22rpx;
+  color: #bbb;
+}

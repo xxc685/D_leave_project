@@ -1,0 +1,40 @@
+<view class="mine-container">
+  <!-- 用户信息卡片 -->
+  <view class="profile-card">
+    <view class="avatar">
+      <text class="avatar-text">{{name ? name[0] : '👤'}}</text>
+    </view>
+    <view class="profile-info">
+      <text class="profile-name">{{name || '未登录'}}</text>
+      <view class="profile-meta">
+        <text class="profile-role">{{roleLabel}}</text>
+        <text class="profile-id" wx:if="{{id}}">ID: {{id}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能菜单 -->
+  <view class="menu-section">
+    <view class="menu-item" bindtap="goToHistory">
+      <text class="menu-icon">📋</text>
+      <text class="menu-label">{{menuLabel}}</text>
+      <text class="menu-arrow">›</text>
+    </view>
+
+    <view class="menu-item" bindtap="goToStats">
+      <text class="menu-icon">📊</text>
+      <text class="menu-label">出勤统计看板</text>
+      <text class="menu-arrow">›</text>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
+  <view class="logout-area" wx:if="{{role}}">
+    <button class="logout-btn" bindtap="handleLogout">退出登录</button>
+  </view>
+
+  <!-- 版本信息 -->
+  <view class="version-info">
+    <text>课堂扫码签到 v2.0</text>
+  </view>
+</view>

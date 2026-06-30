@@ -1,0 +1,82 @@
+<view class="login-container">
+  <!-- Logo 区域 -->
+  <view class="logo-area">
+    <image class="logo" src="/pages/FDU_logo.png" mode="aspectFit" />
+    <text class="app-title">课堂扫码签到</text>
+    <text class="app-subtitle">复旦大学 · 智能考勤系统</text>
+  </view>
+
+  <!-- 身份切换 Tab -->
+  <view class="role-tabs">
+    <view
+      class="role-tab {{role === 'student' ? 'active student-active' : ''}}"
+      data-role="student"
+      bindtap="switchRole"
+    >
+      <text>🎓 学生登录</text>
+    </view>
+    <view
+      class="role-tab {{role === 'teacher' ? 'active teacher-active' : ''}}"
+      data-role="teacher"
+      bindtap="switchRole"
+    >
+      <text>📚 教师登录</text>
+    </view>
+  </view>
+
+  <!-- 表单区域 -->
+  <view class="form-area">
+    <!-- 学生表单 -->
+    <block wx:if="{{role === 'student'}}">
+      <view class="input-group">
+        <text class="input-label">学号</text>
+        <input
+          class="input-field"
+          placeholder="请输入学号"
+          value="{{student_id}}"
+          bindinput="onInputStudentId"
+          type="text"
+        />
+      </view>
+    </block>
+
+    <!-- 教师表单 -->
+    <block wx:if="{{role === 'teacher'}}">
+      <view class="input-group">
+        <text class="input-label">工号</text>
+        <input
+          class="input-field"
+          placeholder="请输入工号"
+          value="{{teacher_id}}"
+          bindinput="onInputTeacherId"
+          type="text"
+        />
+      </view>
+    </block>
+
+    <view class="input-group">
+      <text class="input-label">姓名</text>
+      <input
+        class="input-field"
+        placeholder="请输入姓名"
+        value="{{name}}"
+        bindinput="onInputName"
+        type="text"
+      />
+    </view>
+
+    <!-- 登录按钮 -->
+    <button
+      class="login-btn {{role === 'student' ? 'btn-student' : 'btn-teacher'}}"
+      bindtap="handleLogin"
+      hover-class="login-btn-hover"
+    >
+      登 录
+    </button>
+  </view>
+
+  <!-- 底部提示 -->
+  <view class="footer-tip">
+    <text>首次登录后信息将自动保存</text>
+  </view>
+</view>

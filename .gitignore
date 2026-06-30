@@ -1,0 +1,7 @@
+﻿project.private.config.json
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+output/pdf/*提交前补GitHub链接.pdf

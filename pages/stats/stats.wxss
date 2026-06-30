@@ -1,0 +1,377 @@
+/* ========== 全局容器 ========== */
+.stats-container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f5f7fb 0%, #ffffff 40%);
+  padding: 40rpx 32rpx;
+  box-sizing: border-box;
+}
+
+/* ========== 顶栏 ========== */
+.stats-header {
+  margin-bottom: 40rpx;
+  padding: 0 8rpx;
+}
+
+.stats-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #1a1a2e;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.stats-subtitle {
+  font-size: 26rpx;
+  color: #999;
+}
+
+/* ========== 图表卡片 ========== */
+.chart-card {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 36rpx 28rpx;
+  box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: 32rpx;
+}
+
+.chart-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 36rpx;
+}
+
+.chart-card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #333;
+}
+
+.chart-card-note {
+  font-size: 22rpx;
+  color: #ccc;
+}
+
+/* ========== 柱状图 ========== */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 400rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid #eee;
+}
+
+.bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.bar-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 360rpx;
+}
+
+.bar-value {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 8rpx;
+}
+
+.bar-fill {
+  width: 52rpx;
+  border-radius: 10rpx 10rpx 0 0;
+  min-height: 8rpx;
+  transition: height 0.6s ease;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.bar-label {
+  font-size: 22rpx;
+  color: #888;
+  margin-top: 16rpx;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ========== 图例 ========== */
+.chart-legend {
+  margin-top: 20rpx;
+  text-align: center;
+}
+
+.legend-text {
+  font-size: 22rpx;
+  color: #bbb;
+}
+
+/* ========== 汇总卡片 ========== */
+.summary-row {
+  display: flex;
+  gap: 20rpx;
+  margin-bottom: 32rpx;
+}
+
+.summary-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 36rpx 0;
+  text-align: center;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.04);
+}
+
+.summary-num {
+  font-size: 44rpx;
+  font-weight: 800;
+  color: #4A90E2;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.summary-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* ========== 底部提示 ========== */
+.dev-hint {
+  padding: 40rpx 20rpx;
+  text-align: center;
+}
+
+.dev-hint text {
+  font-size: 22rpx;
+  color: #ccc;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   新增样式（学生/教师看板）
+   ============================================================ */
+
+/* ---------- 学生/教师视图容器 ---------- */
+.student-view,
+.teacher-view {
+  margin-top: 10rpx;
+}
+
+/* ---------- 通用区块 ---------- */
+.section {
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 28rpx 24rpx;
+  margin-bottom: 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1a1a2e;
+  padding-bottom: 16rpx;
+  border-bottom: 2rpx solid #f0f2f5;
+  margin-bottom: 14rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ---------- 学生视图：课程明细 ---------- */
+.course-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f5f7fa;
+}
+
+.course-item:last-child {
+  border-bottom: none;
+}
+
+.course-name {
+  font-size: 28rpx;
+  color: #333;
+  flex: 1;
+}
+
+.course-rate {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #4A90E2;
+  margin: 0 16rpx;
+}
+
+.course-detail {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* ---------- 学生视图：缺勤记录 ---------- */
+.absent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #f5f7fa;
+}
+
+.absent-item:last-child {
+  border-bottom: none;
+}
+
+.absent-date {
+  font-size: 24rpx;
+  color: #E74C3C;
+}
+
+/* ---------- 教师视图：班级选择器 ---------- */
+.picker-section {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 20rpx 24rpx;
+  margin-bottom: 28rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.06);
+}
+
+.picker-section text {
+  font-size: 28rpx;
+  color: #333;
+  margin-right: 16rpx;
+}
+
+.picker-display {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 20rpx;
+  background: #f5f7fa;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  color: #1a1a2e;
+}
+
+.picker-arrow {
+  color: #999;
+  font-size: 24rpx;
+}
+
+/* ---------- 教师视图：班级详情 ---------- */
+.class-detail {
+  margin-bottom: 28rpx;
+}
+
+.class-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  margin-bottom: 12rpx;
+}
+
+.class-rate {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #4A90E2;
+}
+
+.class-meta {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* ---------- 教师视图：缺勤学生 ---------- */
+.absent-student {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14rpx 0;
+  border-bottom: 1rpx solid #f5f7fa;
+}
+
+.absent-student:last-child {
+  border-bottom: none;
+}
+
+.absent-student text:first-child {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.absent-count {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #E74C3C;
+}
+
+/* ---------- 教师视图：班级概览列表 ---------- */
+.class-overview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid #f5f7fa;
+}
+
+.class-overview-item:last-child {
+  border-bottom: none;
+}
+
+.class-id {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.class-rate-mini {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #4A90E2;
+}
+
+/* ---------- 加载提示 ---------- */
+.loading-tip {
+  text-align: center;
+  padding: 120rpx 0;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* ---------- 底部操作栏 ---------- */
+.footer-actions {
+  padding: 20rpx 0 40rpx;
+}
+
+.refresh-btn {
+  width: 100%;
+  background: #4A90E2;
+  color: #fff;
+  border-radius: 50rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  padding: 28rpx 0;
+  border: none;
+  box-shadow: 0 8rpx 24rpx rgba(74, 144, 226, 0.35);
+}
+
+.refresh-btn:active {
+  opacity: 0.8;
+}
+
+/* ---------- 空状态 ---------- */
+.empty-tip {
+  text-align: center;
+  padding: 40rpx 0;
+  font-size: 26rpx;
+  color: #bbb;
+}

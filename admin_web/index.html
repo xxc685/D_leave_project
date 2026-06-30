@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>扫码签到 - 后台管理</title>
+  <!-- Element Plus CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+
+    #app { display: flex; height: 100vh; }
+
+    /* ===== 左侧菜单 ===== */
+    .sidebar {
+      width: 220px; background: #1f2d3d; color: #fff;
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-logo {
+      padding: 22px 20px; font-size: 18px; font-weight: bold;
+      border-bottom: 1px solid #2c3e50; text-align: center;
+      letter-spacing: 2px;
+    }
+    .sidebar-menu { flex: 1; padding: 12px 0; }
+    .menu-item {
+      padding: 14px 24px; cursor: pointer; font-size: 14px;
+      color: #bfcbd9; transition: all 0.2s;
+      border-left: 3px solid transparent;
+    }
+    .menu-item:hover { background: #2c3e50; color: #fff; }
+    .menu-item.active {
+      background: #2c3e50; color: #409EFF;
+      border-left-color: #409EFF;
+    }
+
+    /* ===== 右侧区域 ===== */
+    .main-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .top-header {
+      padding: 16px 28px; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      font-size: 16px; color: #333; flex-shrink: 0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .top-header .dot { width: 8px; height: 8px; background: #67C23A; border-radius: 50%; }
+    .content { flex: 1; padding: 24px 28px; background: #f0f2f5; overflow-y: auto; }
+
+    /* ===== 内容卡片 ===== */
+    .content-card { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+    .placeholder-panel {
+      display: flex; align-items: center; justify-content: center;
+      height: 300px; font-size: 18px; color: #bbb;
+    }
+
+    .toolbar { display: flex; gap: 10px; margin-bottom: 18px; }
+
+    /* ===== 出勤大数据分析占位 ===== */
+    #stats-container {
+      display: flex; align-items: center; justify-content: center;
+      min-height: 420px;
+    }
+    .stats-placeholder {
+      text-align: center;
+      padding: 60px 80px;
+      background: linear-gradient(135deg, #f8f9fb 0%, #eef1f5 100%);
+      border: 2px dashed #cfd5de;
+      border-radius: 16px;
+    }
+    .stats-placeholder-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    .stats-placeholder-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #555;
+      margin-bottom: 12px;
+    }
+    .stats-placeholder-desc {
+      font-size: 15px;
+      color: #999;
+      margin-bottom: 24px;
+    }
+    .stats-placeholder-hint {
+      font-size: 13px;
+      color: #bbb;
+    }
+    .stats-placeholder-hint code {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 4px 16px;
+      background: #fff;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #409EFF;
+      border: 1px solid #e0e4ea;
+    }
+
+    /* ===== 新增图表布局优化 ===== */
+    #stats-container {
+      display: block !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 左侧菜单 -->
+    <div class="sidebar">
+      <div class="sidebar-logo">签到管理系统</div>
+      <div class="sidebar-menu">
+        <div v-for="item in menuItems" :key="item.key"
+             class="menu-item"
+             :class="{ active: activeMenu === item.key }"
+             @click="switchMenu(item.key)">
+          {{ item.label }}
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧主体 -->
+    <div class="main-area">
+      <div class="top-header">
+        <span class="dot"></span>
+        <span>{{ currentTitle }}</span>
+      </div>
+      <div class="content">
+
+        <!-- ========== 签到数据管理面板 ========== -->
+        <div v-if="activeMenu === 'attendance'" class="content-card">
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+            <span style="font-size:14px; color:#555;">学号：</span>
+            <el-input v-model="filterStudentId" placeholder="留空查全部" style="width:180px;" clearable @keyup.enter="queryRecords"></el-input>
+            <span style="font-size:14px; color:#555;">签到状态：</span>
+            <el-select v-model="filterStatus" placeholder="全部状态" style="width:150px;" clearable>
+              <el-option label="出勤 (present)" value="present"></el-option>
+              <el-option label="迟到 (late)" value="late"></el-option>
+              <el-option label="缺勤 (absent)" value="absent"></el-option>
+              <el-option label="无效 (invalid)" value="invalid"></el-option>
+            </el-select>
+            <el-button type="primary" @click="queryRecords" :loading="tableLoading">查询</el-button>
+            <el-button type="success" @click="exportRecordsExcel" :disabled="records.length === 0">导出 Excel</el-button>
+          </div>
+
+          <el-table :data="records" border stripe v-loading="tableLoading" empty-text="点击「查询」加载签到数据">
+            <el-table-column prop="record_id" label="记录ID" width="90"></el-table-column>
+            <el-table-column prop="student_id" label="学号" width="130"></el-table-column>
+            <el-table-column prop="student_name" label="学生姓名" width="110"></el-table-column>
+            <el-table-column prop="course_name" label="课程名称" width="160"></el-table-column>
+            <el-table-column prop="scan_time" label="签到时间" width="175"></el-table-column>
+            <el-table-column label="签到状态" width="110">
+              <template #default="scope">
+                <el-tag :type="statusTagType(scope.row.attendance_status)" size="small">
+                  {{ statusLabel(scope.row.attendance_status) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="定位距离(m)" width="120">
+              <template #default="scope">
+                <span>{{ scope.row.distance_m != null ? scope.row.distance_m : '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="remark" label="备注" min-width="180">
+              <template #default="scope">
+                <span style="color:#999;">{{ scope.row.remark || '-' }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="scope">
+                <el-button size="small" type="warning" plain @click="openEditDialog(scope.row)">
+                  修改状态
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- ========== 学生管理面板 ========== -->
+        <div v-if="activeMenu === 'student'" class="content-card">
+          <div class="toolbar">
+            <el-button type="primary" @click="openStudentDialog()">新增学生</el-button>
+            <el-button @click="handleImport">批量导入</el-button>
+            <el-button @click="handleExport">导出数据</el-button>
+          </div>
+
+          <el-table :data="students" border stripe v-loading="studentLoading" empty-text="暂无学生数据">
+            <el-table-column prop="student_id" label="学号" width="140"></el-table-column>
+            <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+            <el-table-column prop="gender" label="性别" width="80"></el-table-column>
+            <el-table-column prop="department" label="院系" width="160"></el-table-column>
+            <el-table-column prop="major" label="专业" width="160"></el-table-column>
+            <el-table-column prop="class_name" label="行政班" width="140"></el-table-column>
+            <el-table-column label="操作" width="160" fixed="right">
+              <template #default="scope">
+                <el-button size="small" type="primary" plain @click="openStudentDialog(scope.row)">编辑</el-button>
+                <el-button size="small" type="danger" plain @click="deleteStudent(scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- ========== 教师管理面板 ========== -->
+        <div v-if="activeMenu === 'teacher'" class="content-card">
+          <div class="toolbar">
+            <el-button type="primary" @click="openTeacherDialog()">新增教师</el-button>
+          </div>
+
+          <el-table :data="teachers" border stripe v-loading="teacherLoading" empty-text="暂无教师数据">
+            <el-table-column prop="teacher_id" label="工号" width="140"></el-table-column>
+            <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+            <el-table-column prop="department" label="院系" width="200"></el-table-column>
+            <el-table-column label="操作" width="160" fixed="right">
+              <template #default="scope">
+                <el-button size="small" type="primary" plain @click="openTeacherDialog(scope.row)">编辑</el-button>
+                <el-button size="small" type="danger" plain @click="deleteTeacher(scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- ========== 教学班管理面板 ========== -->
+        <div v-if="activeMenu === 'class'" class="content-card">
+          <div class="toolbar">
+            <el-button type="primary" @click="openClassDialog()">新增教学班</el-button>
+          </div>
+
+          <el-table :data="teachingClasses" border stripe v-loading="classLoading" empty-text="暂无教学班数据">
+            <el-table-column prop="class_id" label="班级编号" width="130"></el-table-column>
+            <el-table-column prop="course_id" label="课程编号" width="120"></el-table-column>
+            <!-- 新增课程名列 -->
+            <el-table-column prop="course_name" label="课程名" width="160"></el-table-column>
+            <el-table-column prop="teacher_id" label="教师工号" width="130"></el-table-column>
+            <!-- 新增教师名列 -->
+            <el-table-column prop="teacher_name" label="教师名" width="120"></el-table-column>
+            <el-table-column prop="semester" label="学期" width="140"></el-table-column>
+            <el-table-column prop="location" label="上课地点" width="140"></el-table-column>
+            <el-table-column prop="max_students" label="最大人数" width="100"></el-table-column>
+            <el-table-column label="操作" width="240" fixed="right">
+              <template #default="scope">
+                <el-button size="small" type="primary" plain @click="openClassDialog(scope.row)">编辑</el-button>
+                <el-button size="small" type="danger" plain @click="deleteClass(scope.row)">删除</el-button>
+                <el-button size="small" type="success" @click="openRosterDialog(scope.row)">名单管理</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
+
+        <!-- ========== 出勤大数据分析面板 ========== -->
+        <div v-if="activeMenu === 'stats'" class="content-card" v-loading="statLoading">
+          <div style="margin-bottom:16px;">
+            <el-radio-group v-model="statsTab" @change="onStatsTabChange">
+              <el-radio-button label="overview">综合看板</el-radio-button>
+              <el-radio-button label="studentQuery">个人查询</el-radio-button>
+              <el-radio-button label="class">教学班统计</el-radio-button>
+              <el-radio-button label="teacher">教师统计</el-radio-button>
+              <el-radio-button label="trend">时间趋势</el-radio-button>
+              <el-radio-button label="warning">异常预警</el-radio-button>
+            </el-radio-group>
+            <el-button type="primary" @click="loadStatsData" style="margin-left:16px;">🔄 刷新</el-button>
+          </div>
+
+          <!-- 综合看板（原有院系、缺勤TOP10） -->
+          <div v-show="statsTab === 'overview'">
+            <div style="width:100%;height:380px;margin-bottom:24px;" id="chart-dept"></div>
+            <div style="width:100%;height:380px;" id="chart-absent"></div>
+          </div>
+
+          <!-- 个人查询 -->
+          <div v-show="statsTab === 'studentQuery'">
+            <div style="margin-bottom:12px;">
+              <span>学号：</span>
+              <el-input v-model="studentQueryId" placeholder="请输入学号" style="width:200px;" clearable></el-input>
+              <el-button type="primary" @click="loadStudentRecords" style="margin-left:10px;">查询</el-button>
+              <span style="margin-left:20px;font-size:14px;color:#666;">
+                总出勤率：<strong style="color:#409EFF;">{{ studentSummary.attendance_rate }}%</strong>
+                总签到次数：{{ studentSummary.total_sessions }}
+              </span>
+            </div>
+
+            <!-- 按课程分类统计 -->
+            <div style="margin-top:12px; margin-bottom:16px;">
+              <el-table :data="studentCourseStats" border stripe size="small" max-height="200">
+                <el-table-column prop="course_name" label="课程名称" width="200"></el-table-column>
+                <el-table-column prop="total" label="签到次数" width="100"></el-table-column>
+                <el-table-column prop="valid" label="有效出勤" width="100"></el-table-column>
+                <el-table-column prop="absent" label="缺勤次数" width="100"></el-table-column>
+                <el-table-column label="出勤率" width="150">
+                  <template #default="scope">
+                    <el-progress :percentage="scope.row.rate" :color="scope.row.rate >= 80 ? '#67C23A' : '#E6A23C'"></el-progress>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+
+            <!-- 缺勤明细（仅当有缺勤时显示） -->
+            <div v-if="studentAbsentList.length > 0" style="margin-bottom:16px;">
+              <el-alert title="缺勤记录" type="warning" :closable="false" show-icon>
+                <div>
+                  <span style="font-weight:bold;">该学生缺勤课程及日期：</span>
+                  <span v-for="(item, index) in studentAbsentList" :key="index" style="margin-right:16px;">
+                    {{ item.course_name }} ({{ item.session_date }})
+                  </span>
+                </div>
+              </el-alert>
+            </div>
+
+            <!-- 明细记录 -->
+            <el-table :data="studentRecords" border stripe max-height="400">
+              <el-table-column prop="session_date" label="日期" width="120"></el-table-column>
+              <el-table-column prop="course_name" label="课程名称" width="180"></el-table-column>
+              <el-table-column prop="scan_time" label="签到时间" width="170"></el-table-column>
+              <el-table-column label="状态" width="100">
+                <template #default="scope">
+                  <el-tag :type="statusTagType(scope.row.attendance_status)" size="small">
+                    {{ statusLabel(scope.row.attendance_status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="有效性" width="100">
+                <template #default="scope">
+                  <el-tag :type="scope.row.is_valid === 'valid' ? 'success' : 'danger'" size="small">
+                    {{ scope.row.is_valid === 'valid' ? '有效' : '无效' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="remark" label="备注" min-width="150"></el-table-column>
+            </el-table>
+          </div>
+
+          <!-- 教学班统计 -->
+          <div v-show="statsTab === 'class'">
+            <div style="margin-bottom:12px;">
+              <span>选择教学班：</span>
+              <el-select v-model="selectedClass" placeholder="请选择" style="width:250px;" @change="loadClassStats">
+                <el-option
+                  v-for="cls in classOptions"
+                  :key="cls.class_id"
+                  :label="cls.class_id + ' - ' + cls.course_name"
+                  :value="cls.class_id">
+                </el-option>
+              </el-select>
+              <span style="margin-left:20px;font-size:14px;color:#666;">
+                出勤率：<strong style="color:#409EFF;">{{ classOverview.attendance_rate }}%</strong>
+                场次数：{{ classOverview.total_sessions }}
+                选课人数：{{ classOverview.total_students }}
+              </span>
+            </div>
+            <div style="width:100%;height:380px;" id="chart-class-trend"></div>
+            <div style="margin-top:20px;width:100%;height:380px;" id="chart-course-compare" v-if="selectedCourse"></div>
+            <!-- 缺勤学生列表 -->
+            <div style="margin-top:24px;">
+              <div style="font-size:16px; font-weight:600; color:#333; margin-bottom:12px;">
+                📋 缺勤学生名单（按缺勤次数排序）
+              </div>
+              <el-table :data="classAbsentStudents" border stripe max-height="300" v-if="classAbsentStudents.length > 0">
+                <el-table-column prop="student_id" label="学号" width="140"></el-table-column>
+                <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+                <el-table-column prop="department" label="院系" width="160"></el-table-column>
+                <el-table-column prop="absent_count" label="缺勤次数" width="120">
+                  <template #default="scope">
+                    <el-tag :type="scope.row.absent_count >= 3 ? 'danger' : 'warning'" size="small">
+                      {{ scope.row.absent_count }} 次
+                    </el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div v-else style="text-align:center; padding:20px 0; color:#999; font-size:14px;">
+                🎉 该班暂无缺勤记录
+              </div>
+            </div>
+          </div>
+
+          <!-- 教师统计 -->
+          <div v-show="statsTab === 'teacher'">
+            <div style="margin-bottom:12px;">
+              <span>选择教师：</span>
+              <el-select v-model="selectedTeacher" placeholder="请选择" style="width:250px;" @change="loadTeacherStats">
+                <el-option
+                  v-for="t in teacherOptions"
+                  :key="t.teacher_id"
+                  :label="t.name + '(' + t.teacher_id + ')'"
+                  :value="t.teacher_id">
+                </el-option>
+              </el-select>
+              <span style="margin-left:20px;font-size:14px;color:#666;">
+                平均出勤率：<strong style="color:#409EFF;">{{ teacherSummary.avg_attendance_rate }}%</strong>
+                教学班数：{{ teacherSummary.total_classes }}
+              </span>
+            </div>
+            <div style="width:100%;height:380px;" id="chart-teacher-classes"></div>
+          </div>
+
+          <!-- 时间趋势 -->
+          <div v-show="statsTab === 'trend'">
+            <div style="margin-bottom:12px;">
+              <span>时间范围：</span>
+              <el-date-picker
+                v-model="trendDateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                value-format="YYYY-MM-DD"
+                @change="loadTrend">
+              </el-date-picker>
+              <el-button type="primary" @click="loadTrend" style="margin-left:10px;">查询</el-button>
+            </div>
+            <div style="width:100%;height:380px;" id="chart-trend-daily"></div>
+          </div>
+
+          <!-- 异常预警 -->
+          <div v-show="statsTab === 'warning'">
+            <div style="margin-bottom:16px;">
+              <el-button type="warning" @click="loadWarnings">刷新预警</el-button>
+            </div>
+            <el-row :gutter="20">
+              <el-col :span="12">
+                <el-card shadow="hover">
+                  <div slot="header">连续缺勤（≥3次）</div>
+                  <el-table :data="warningAbsent" border stripe max-height="300">
+                    <el-table-column prop="student_id" label="学号" width="120"></el-table-column>
+                    <el-table-column prop="name" label="姓名" width="100"></el-table-column>
+                    <el-table-column prop="department" label="院系"></el-table-column>
+                    <el-table-column prop="absent_count" label="缺勤次数" width="100"></el-table-column>
+                  </el-table>
+                </el-card>
+              </el-col>
+              <el-col :span="12">
+                <el-card shadow="hover">
+                  <div slot="header">无效签到统计</div>
+                  <el-table :data="warningInvalid" border stripe max-height="300">
+                    <el-table-column prop="student_id" label="学号" width="120"></el-table-column>
+                    <el-table-column prop="name" label="姓名" width="100"></el-table-column>
+                    <el-table-column prop="invalid_count" label="无效次数" width="100"></el-table-column>
+                  </el-table>
+                </el-card>
+              </el-col>
+            </el-row>
+            <div style="margin-top:20px;">
+              <span>选择场次查看未签到学生：</span>
+              <el-select v-model="selectedSessionForAbsent" placeholder="请选择" style="width:300px;" @change="loadSessionAbsent">
+                <el-option
+                  v-for="sess in sessionOptions"
+                  :key="sess.session_id"
+                  :label="sess.session_id + ' - ' + sess.session_date"
+                  :value="sess.session_id">
+                </el-option>
+              </el-select>
+              <el-table :data="sessionAbsentList" border stripe style="margin-top:10px;" max-height="300">
+                <el-table-column prop="student_id" label="学号" width="120"></el-table-column>
+                <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+                <el-table-column prop="department" label="院系"></el-table-column>
+              </el-table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========== 考勤记录修改对话框 ========== -->
+    <el-dialog v-model="editDialogVisible" title="修改签到记录" width="480px">
+      <div style="margin-bottom:16px;">
+        <div style="margin-bottom:8px; font-size:14px; color:#555;">学生：{{ editRecord.student_name }}（{{ editRecord.student_id }}）</div>
+        <div style="margin-bottom:16px; font-size:13px; color:#999;">原状态：{{ statusLabel(editRecord.attendance_status) }}</div>
+
+        <div style="margin-bottom:12px;">
+          <span style="font-size:14px; color:#333;">新状态：</span>
+          <el-select v-model="editForm.attendance_status" placeholder="请选择" style="width:100%; margin-top:6px;">
+            <el-option label="出勤 (present)" value="present"></el-option>
+            <el-option label="迟到 (late)" value="late"></el-option>
+            <el-option label="缺勤 (absent)" value="absent"></el-option>
+            <el-option label="无效 (invalid)" value="invalid"></el-option>
+          </el-select>
+        </div>
+
+        <div>
+          <span style="font-size:14px; color:#333;">备注：</span>
+          <el-input v-model="editForm.remark" type="textarea" placeholder="修改备注（可选）" style="margin-top:6px;" :rows="3"></el-input>
+        </div>
+      </div>
+
+      <template #footer>
+        <el-button @click="editDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitEdit" :loading="editLoading">确定修改</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ========== 学生新增/编辑对话框 ========== -->
+    <el-dialog v-model="studentDialogVisible" :title="studentDialogTitle" width="500px">
+      <el-form :model="studentForm" label-width="80px">
+        <el-form-item label="学号" v-if="!studentForm.isEdit">
+          <el-input v-model="studentForm.student_id" placeholder="请输入学号"></el-input>
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input v-model="studentForm.name" placeholder="请输入姓名"></el-input>
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-select v-model="studentForm.gender" placeholder="请选择性别" style="width:100%;" clearable>
+            <el-option label="男" value="男"></el-option>
+            <el-option label="女" value="女"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="院系">
+          <el-input v-model="studentForm.department" placeholder="请输入院系"></el-input>
+        </el-form-item>
+        <el-form-item label="专业">
+          <el-input v-model="studentForm.major" placeholder="请输入专业"></el-input>
+        </el-form-item>
+        <el-form-item label="行政班">
+          <el-input v-model="studentForm.class_name" placeholder="请输入行政班"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="studentDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitStudent" :loading="studentSubmitLoading">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ========== 教学班新增/编辑对话框 ========== -->
+    <el-dialog v-model="classDialogVisible" :title="classDialogTitle" width="500px">
+      <el-form :model="classForm" label-width="90px">
+        <el-form-item label="班级编号" v-if="!classForm.isEdit">
+          <el-input v-model="classForm.class_id" placeholder="请输入班级编号"></el-input>
+        </el-form-item>
+        <el-form-item label="课程编号">
+          <el-input v-model="classForm.course_id" placeholder="请输入课程编号"></el-input>
+        </el-form-item>
+        <el-form-item label="教师工号">
+          <el-input v-model="classForm.teacher_id" placeholder="请输入教师工号"></el-input>
+        </el-form-item>
+        <el-form-item label="学期">
+          <el-input v-model="classForm.semester" placeholder="如：2025-2026-2"></el-input>
+        </el-form-item>
+        <el-form-item label="上课地点">
+          <el-input v-model="classForm.location" placeholder="请输入上课地点"></el-input>
+        </el-form-item>
+        <el-form-item label="最大人数">
+          <el-input v-model="classForm.max_students" type="number" placeholder="请输入最大人数"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="classDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitClass" :loading="classSubmitLoading">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ========== 教师新增/编辑对话框 ========== -->
+    <el-dialog v-model="teacherDialogVisible" :title="teacherDialogTitle" width="500px">
+      <el-form :model="teacherForm" label-width="80px">
+        <el-form-item label="工号" v-if="!teacherForm.isEdit">
+          <el-input v-model="teacherForm.teacher_id" placeholder="请输入工号"></el-input>
+        </el-form-item>
+        <el-form-item label="姓名">
+          <el-input v-model="teacherForm.name" placeholder="请输入姓名"></el-input>
+        </el-form-item>
+        <el-form-item label="院系">
+          <el-input v-model="teacherForm.department" placeholder="请输入院系"></el-input>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <el-button @click="teacherDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitTeacher" :loading="teacherSubmitLoading">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ========== 班级名单管理对话框 ========== -->
+    <el-dialog v-model="rosterDialogVisible" title="班级名单管理" width="650px" @opened="loadRoster">
+      <div style="margin-bottom:20px;">
+        <el-form :inline="true">
+          <el-form-item label="选择学生">
+            <el-select v-model="rosterSelectedStudent" placeholder="请选择学生" style="width:320px;" filterable clearable>
+              <el-option
+                v-for="stu in rosterAllStudents"
+                :key="stu.student_id"
+                :label="stu.student_id + ' - ' + stu.name"
+                :value="stu.student_id">
+              </el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="addStudentToRoster" :loading="rosterAddLoading">添加学生</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <el-table :data="rosterList" border stripe v-loading="rosterLoading" empty-text="该班级暂无选课学生">
+        <el-table-column prop="student_id" label="学号" width="160"></el-table-column>
+        <el-table-column prop="name" label="姓名" width="140"></el-table-column>
+        <el-table-column prop="department" label="院系" min-width="180"></el-table-column>
+      </el-table>
+
+      <template #footer>
+        <el-button @click="rosterDialogVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
+  </div>
+
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- Element Plus JS -->
+  <script src="https://unpkg.com/element-plus"></script>
+  <!-- Axios -->
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <!-- ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+
+  <script>
+    const { createApp, ref, reactive, nextTick } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+    
+    const app = createApp({
+      setup() {
+        const API_BASE = 'http://localhost:5000';
+
+        // --- 菜单 ---
+        const menuItems = [
+          { key: 'student', label: '学生管理' },
+           { key: 'teacher', label: '教师管理' },   // 新增
+          { key: 'class', label: '教学班管理' },
+          { key: 'attendance', label: '签到数据管理' },
+          { key: 'stats', label: '出勤大数据分析' }
+        ];
+        const activeMenu = ref('attendance');
+        const currentTitle = ref('签到数据管理');
+
+        // ========== D模块 大数据统计变量（新增） ==========
+        const STAT_API = 'http://localhost:8080';
+        const statLoading = ref(false);
+        const statsTab = ref('overview');
+
+        // 图表实例
+        let deptChart = null;
+        let absentChart = null;
+        let classTrendChart = null;
+        let courseCompareChart = null;
+        let teacherClassesChart = null;
+        let trendDailyChart = null;
+        let statTimer = null;
+
+        // 个人查询
+        const studentQueryId = ref('');
+        const studentRecords = ref([]);
+        const studentSummary = reactive({ attendance_rate: 0, total_sessions: 0 });
+        const studentCourseStats = ref([]);
+        const studentAbsentList = ref([]);
+
+        // 教学班统计
+        const classOptions = ref([]);
+        const selectedClass = ref('');
+        const classOverview = reactive({ attendance_rate: 0, total_sessions: 0, total_students: 0 });
+        const classTrendData = ref([]);
+        const selectedCourse = ref('');
+        const classAbsentStudents = ref([]);
+
+        // 教师统计
+        const teacherOptions = ref([]);
+        const selectedTeacher = ref('');
+        const teacherSummary = reactive({ avg_attendance_rate: 0, total_classes: 0, class_list: [] });
+
+        // 时间趋势
+        const trendDateRange = ref([]);
+        const trendDailyData = ref([]);
+
+        // 异常预警
+        const warningAbsent = ref([]);
+        const warningInvalid = ref([]);
+        const sessionOptions = ref([]);
+        const selectedSessionForAbsent = ref('');
+        const sessionAbsentList = ref([]);
+
+        function switchMenu(key) {
+          activeMenu.value = key;
+          const item = menuItems.find(m => m.key === key);
+          currentTitle.value = item ? item.label : '';
+
+          // 离开 stats 时清除定时器并销毁图表 （新增）
+          if (activeMenu.value !== 'stats') {
+            if (statTimer) {
+              clearTimeout(statTimer);
+              statTimer = null;
+            }
+            // 销毁所有图表实例
+            deptChart?.dispose();
+            absentChart?.dispose();
+            classTrendChart?.dispose();
+            courseCompareChart?.dispose();
+            teacherClassesChart?.dispose();
+            trendDailyChart?.dispose();
+            deptChart = null;
+            absentChart = null;
+            classTrendChart = null;
+            courseCompareChart = null;
+            teacherClassesChart = null;
+            trendDailyChart = null;
+          }
+
+          // 切换菜单后自动加载对应数据
+          if (key === 'student') {
+            loadStudents();
+          } else if (key === 'teacher') {   // 新增
+            loadTeachers();
+          } else if (key === 'class') {
+            loadClasses();
+          } else if (key === 'attendance') {
+            queryRecords();
+          }
+          // 加载对应数据 （新增）
+          else if (key === 'stats') {
+            // 先清空旧定时器
+            if (statTimer) {
+              clearTimeout(statTimer);
+              statTimer = null;
+            }
+            nextTick(() => {
+              // 初始加载数据
+              loadStatsData();
+              loadClassOptions();
+              loadTeacherOptions();
+              loadWarnings();
+
+              // 定义每日0点刷新函数
+              function scheduleDailyRefresh() {
+                const now = new Date();
+                // 计算到明天0点的毫秒数
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                const delay = tomorrow.getTime() - now.getTime();
+
+                statTimer = setTimeout(() => {
+                  // 仅在当前选项卡为“综合看板”时刷新
+                  if (statsTab.value === 'overview') {
+                    loadStatsData();
+                  }
+                  // 递归设置下一个每日定时器
+                  scheduleDailyRefresh();
+                }, delay);
+              }
+
+              // 启动每日定时器
+              scheduleDailyRefresh();
+            });
+          }
+        }
+
+        // --- 签到数据查询 ---
+        const filterStudentId = ref('');
+        const filterStatus = ref('');
+        const records = ref([]);
+        const tableLoading = ref(false);
+
+        function statusLabel(status) {
+          const map = { present: '出勤', late: '迟到', absent: '缺勤', invalid: '无效' };
+          return map[status] || status || '-';
+        }
+        function statusTagType(status) {
+          const map = { present: 'success', late: 'warning', absent: 'danger', invalid: 'info' };
+          return map[status] || 'info';
+        }
+
+        async function queryRecords() {
+          tableLoading.value = true;
+          try {
+            const params = {};
+            const sid = filterStudentId.value.trim();
+            if (sid) params.student_id = sid;
+            if (filterStatus.value) params.attendance_status = filterStatus.value;
+            const res = await axios.get(API_BASE + '/api/admin/attendance_records', { params });
+            if (res.data.code === 200) {
+              records.value = res.data.data || [];
+              if (records.value.length === 0) ElMessage.info('暂无符合条件的签到记录');
+            } else {
+              ElMessage.error(res.data.message || '查询失败');
+              records.value = [];
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败，请确认后端已启动');
+            records.value = [];
+          } finally {
+            tableLoading.value = false;
+          }
+        }
+
+        function exportRecordsExcel() {
+          if (records.value.length === 0) {
+            ElMessage.warning('没有可导出的数据');
+            return;
+          }
+          const headers = ['记录ID', '学号', '学生姓名', '课程名称', '签到时间', '签到状态', '定位距离(m)', '备注'];
+          const rows = records.value.map(r => [
+            r.record_id,
+            r.student_id,
+            r.student_name || '',
+            r.course_name || '',
+            r.scan_time || '',
+            statusLabel(r.attendance_status),
+            r.distance_m != null ? r.distance_m : '',
+            r.remark || ''
+          ]);
+          const csvContent = '\uFEFF' + [headers, ...rows]
+            .map(row => row.map(cell => {
+              const s = String(cell).replace(/"/g, '""');
+              return /[",\n\r]/.test(s) ? '"' + s + '"' : s;
+            }).join(','))
+            .join('\r\n');
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = '签到记录_' + new Date().toISOString().slice(0, 10) + '.csv';
+          a.click();
+          URL.revokeObjectURL(url);
+          ElMessage.success('导出成功（Excel 可直接打开 CSV 文件）');
+        }
+
+        // --- 考勤记录修改 ---
+        const editDialogVisible = ref(false);
+        const editLoading = ref(false);
+        const editRecord = reactive({});
+        const editForm = reactive({ attendance_status: '', remark: '' });
+
+        function openEditDialog(row) {
+          editDialogVisible.value = true;
+          Object.assign(editRecord, row);
+          editForm.attendance_status = row.attendance_status;
+          editForm.remark = row.remark || '';
+        }
+
+        async function submitEdit() {
+          if (!editForm.attendance_status) {
+            ElMessage.warning('请选择新状态'); return;
+          }
+          editLoading.value = true;
+          try {
+            const res = await axios.patch(API_BASE + '/api/records/' + editRecord.record_id, {
+              attendance_status: editForm.attendance_status,
+              remark: editForm.remark
+            });
+            if (res.data.code === 200) {
+              ElMessage.success('记录已更新');
+              editDialogVisible.value = false;
+              await queryRecords();
+            } else {
+              ElMessage.error(res.data.message || '更新失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            editLoading.value = false;
+          }
+        }
+
+        // --- 学生管理 ---
+        const students = ref([]);
+        const studentLoading = ref(false);
+        const studentDialogVisible = ref(false);
+        const studentSubmitLoading = ref(false);
+        const studentForm = reactive({
+          isEdit: false,
+          student_id: '',
+          name: '',
+          gender: '',
+          department: '',
+          major: '',
+          class_name: ''
+        });
+        const studentDialogTitle = ref('新增学生');
+
+        async function loadStudents() {
+          studentLoading.value = true;
+          try {
+            const res = await axios.get(API_BASE + '/api/students');
+            if (res.data.code === 200) {
+              students.value = res.data.data || [];
+            } else {
+              ElMessage.error(res.data.message || '查询失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            studentLoading.value = false;
+          }
+        }
+
+        function openStudentDialog(row) {
+          if (row) {
+            studentDialogTitle.value = '编辑学生';
+            studentForm.isEdit = true;
+            studentForm.student_id = row.student_id;
+            studentForm.name = row.name || '';
+            studentForm.gender = row.gender || '';
+            studentForm.department = row.department || '';
+            studentForm.major = row.major || '';
+            studentForm.class_name = row.class_name || '';
+          } else {
+            studentDialogTitle.value = '新增学生';
+            studentForm.isEdit = false;
+            studentForm.student_id = '';
+            studentForm.name = '';
+            studentForm.gender = '';
+            studentForm.department = '';
+            studentForm.major = '';
+            studentForm.class_name = '';
+          }
+          studentDialogVisible.value = true;
+        }
+
+        async function submitStudent() {
+          if (!studentForm.name) { ElMessage.warning('请填写姓名'); return; }
+          studentSubmitLoading.value = true;
+          try {
+            let res;
+            if (studentForm.isEdit) {
+              res = await axios.put(API_BASE + '/api/students/' + studentForm.student_id, {
+                name: studentForm.name,
+                gender: studentForm.gender || null,
+                department: studentForm.department,
+                major: studentForm.major,
+                class_name: studentForm.class_name
+              });
+            } else {
+              if (!studentForm.student_id) { ElMessage.warning('请填写学号'); studentSubmitLoading.value = false; return; }
+              res = await axios.post(API_BASE + '/api/students', {
+                student_id: studentForm.student_id,
+                name: studentForm.name,
+                gender: studentForm.gender || null,
+                department: studentForm.department,
+                major: studentForm.major,
+                class_name: studentForm.class_name
+              });
+            }
+            if (res.data.code === 200) {
+              ElMessage.success(studentForm.isEdit ? '信息已更新' : '学生添加成功');
+              studentDialogVisible.value = false;
+              await loadStudents();
+            } else {
+              ElMessage.error(res.data.message || '操作失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            studentSubmitLoading.value = false;
+          }
+        }
+
+        async function deleteStudent(row) {
+          try {
+            await ElMessageBox.confirm('确定删除学生 ' + row.name + '（' + row.student_id + '）吗？', '确认删除', {
+              confirmButtonText: '删除',
+              cancelButtonText: '取消',
+              type: 'warning'
+            });
+          } catch (e) {
+            return; // 取消
+          }
+          try {
+            const res = await axios.delete(API_BASE + '/api/students/' + row.student_id);
+            if (res.data.code === 200) {
+              ElMessage.success('已删除');
+              await loadStudents();
+            } else {
+              ElMessage.error(res.data.message || '删除失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          }
+        }
+
+        function handleImport() {
+          const input = document.createElement('input');
+          input.type = 'file';
+          input.accept = '.csv';
+          input.onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+              const res = await axios.post(API_BASE + '/api/students/import', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+              });
+              if (res.data.code === 200) {
+                ElMessage.success(res.data.message || '导入成功');
+                await loadStudents();
+              } else {
+                ElMessage.error(res.data.message || '导入失败');
+              }
+            } catch (e) {
+              ElMessage.error('网络请求失败');
+            }
+          };
+          input.click();
+        }
+
+        async function handleExport() {
+          try {
+            const res = await axios.get(API_BASE + '/api/students/export', {
+              responseType: 'blob'
+            });
+            const url = URL.createObjectURL(new Blob([res.data], { type: 'text/csv' }));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'students.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+            ElMessage.success('导出成功');
+          } catch (e) {
+            ElMessage.error('导出失败');
+          }
+        }
+
+        // --- 教师管理 ---
+        const teachers = ref([]);
+        const teacherLoading = ref(false);
+        const teacherDialogVisible = ref(false);
+        const teacherSubmitLoading = ref(false);
+        const teacherForm = reactive({
+          isEdit: false,
+          teacher_id: '',
+          name: '',
+          department: ''
+        });
+        const teacherDialogTitle = ref('新增教师');
+
+        async function loadTeachers() {
+          teacherLoading.value = true;
+          try {
+            const res = await axios.get(API_BASE + '/api/teachers');
+            if (res.data.code === 200) {
+              teachers.value = res.data.data || [];
+            } else {
+              ElMessage.error(res.data.message || '查询失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            teacherLoading.value = false;
+          }
+        }
+
+        function openTeacherDialog(row) {
+          if (row) {
+            teacherDialogTitle.value = '编辑教师';
+            teacherForm.isEdit = true;
+            teacherForm.teacher_id = row.teacher_id;
+            teacherForm.name = row.name || '';
+            teacherForm.department = row.department || '';
+          } else {
+            teacherDialogTitle.value = '新增教师';
+            teacherForm.isEdit = false;
+            teacherForm.teacher_id = '';
+            teacherForm.name = '';
+            teacherForm.department = '';
+          }
+          teacherDialogVisible.value = true;
+        }
+
+        async function submitTeacher() {
+          if (!teacherForm.name || !teacherForm.department) {
+            ElMessage.warning('请填写完整信息');
+            return;
+          }
+          teacherSubmitLoading.value = true;
+          try {
+            let res;
+            if (teacherForm.isEdit) {
+              res = await axios.put(API_BASE + '/api/teachers/' + teacherForm.teacher_id, {
+                name: teacherForm.name,
+                department: teacherForm.department
+              });
+            } else {
+              if (!teacherForm.teacher_id) {
+                ElMessage.warning('请填写工号');
+                teacherSubmitLoading.value = false;
+                return;
+              }
+              res = await axios.post(API_BASE + '/api/teachers', {
+                teacher_id: teacherForm.teacher_id,
+                name: teacherForm.name,
+                department: teacherForm.department
+              });
+            }
+            if (res.data.code === 200) {
+              ElMessage.success(teacherForm.isEdit ? '信息已更新' : '教师添加成功');
+              teacherDialogVisible.value = false;
+              await loadTeachers();
+            } else {
+              ElMessage.error(res.data.message || '操作失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            teacherSubmitLoading.value = false;
+          }
+        }
+
+        async function deleteTeacher(row) {
+          try {
+            await ElMessageBox.confirm('确定删除教师 ' + row.name + '（' + row.teacher_id + '）吗？', '确认删除', {
+              confirmButtonText: '删除',
+              cancelButtonText: '取消',
+              type: 'warning'
+            });
+          } catch (e) {
+            return;
+          }
+          try {
+            const res = await axios.delete(API_BASE + '/api/teachers/' + row.teacher_id);
+            if (res.data.code === 200) {
+              ElMessage.success('已删除');
+              await loadTeachers();
+            } else {
+              ElMessage.error(res.data.message || '删除失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          }
+        }
+
+        // --- 教学班管理 ---
+        const teachingClasses = ref([]);
+        const classLoading = ref(false);
+        const classDialogVisible = ref(false);
+        const classSubmitLoading = ref(false);
+        const classForm = reactive({
+          isEdit: false,
+          class_id: '',
+          course_id: '',
+          teacher_id: '',
+          semester: '',
+          location: '',
+          max_students: ''
+        });
+        const classDialogTitle = ref('新增教学班');
+
+        // --- 班级名单管理 ---
+        const rosterDialogVisible = ref(false);
+        const currentClassId = ref('');
+        const rosterList = ref([]);
+        const rosterAllStudents = ref([]);
+        const rosterSelectedStudent = ref('');
+        const rosterLoading = ref(false);
+        const rosterAddLoading = ref(false);
+
+        async function loadClasses() {
+          classLoading.value = true;
+          try {
+            const res = await axios.get(API_BASE + '/api/teaching_classes');
+            if (res.data.code === 200) {
+              teachingClasses.value = res.data.data || [];
+            } else {
+              ElMessage.error(res.data.message || '查询失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            classLoading.value = false;
+          }
+        }
+
+        function openClassDialog(row) {
+          if (row) {
+            classDialogTitle.value = '编辑教学班';
+            classForm.isEdit = true;
+            classForm.class_id = row.class_id;
+            classForm.course_id = row.course_id || '';
+            classForm.teacher_id = row.teacher_id || '';
+            classForm.semester = row.semester || '';
+            classForm.location = row.location || '';
+            classForm.max_students = row.max_students != null ? String(row.max_students) : '';
+          } else {
+            classDialogTitle.value = '新增教学班';
+            classForm.isEdit = false;
+            classForm.class_id = '';
+            classForm.course_id = '';
+            classForm.teacher_id = '';
+            classForm.semester = '';
+            classForm.location = '';
+            classForm.max_students = '';
+          }
+          classDialogVisible.value = true;
+        }
+
+        async function submitClass() {
+          if (!classForm.course_id) { ElMessage.warning('请填写课程编号'); return; }
+          classSubmitLoading.value = true;
+          try {
+            let res;
+            const payload = {
+              course_id: classForm.course_id,
+              teacher_id: classForm.teacher_id,
+              semester: classForm.semester,
+              location: classForm.location,
+              max_students: classForm.max_students ? Number(classForm.max_students) : null
+            };
+            if (classForm.isEdit) {
+              res = await axios.put(API_BASE + '/api/teaching_classes/' + classForm.class_id, payload);
+            } else {
+              if (!classForm.class_id) { ElMessage.warning('请填写班级编号'); classSubmitLoading.value = false; return; }
+              payload.class_id = classForm.class_id;
+              res = await axios.post(API_BASE + '/api/teaching_classes', payload);
+            }
+            if (res.data.code === 200) {
+              ElMessage.success(classForm.isEdit ? '信息已更新' : '教学班添加成功');
+              classDialogVisible.value = false;
+              await loadClasses();
+            } else {
+              ElMessage.error(res.data.message || '操作失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            classSubmitLoading.value = false;
+          }
+        }
+
+        async function deleteClass(row) {
+          try {
+            await ElMessageBox.confirm('确定删除教学班 ' + row.class_id + ' 吗？', '确认删除', {
+              confirmButtonText: '删除',
+              cancelButtonText: '取消',
+              type: 'warning'
+            });
+          } catch (e) {
+            return;
+          }
+          try {
+            const res = await axios.delete(API_BASE + '/api/teaching_classes/' + row.class_id);
+            if (res.data.code === 200) {
+              ElMessage.success('已删除');
+              await loadClasses();
+            } else {
+              ElMessage.error(res.data.message || '删除失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          }
+        }
+
+        // --- 班级名单管理 ---
+        async function openRosterDialog(row) {
+          currentClassId.value = row.class_id;
+          rosterSelectedStudent.value = '';
+          rosterDialogVisible.value = true;
+          // 加载所有学生用于下拉选择
+          try {
+            const res = await axios.get(API_BASE + '/api/students');
+            if (res.data.code === 200) {
+              rosterAllStudents.value = res.data.data || [];
+            }
+          } catch (e) {
+            ElMessage.error('加载学生列表失败');
+          }
+        }
+
+        async function loadRoster() {
+          if (!currentClassId.value) return;
+          rosterLoading.value = true;
+          try {
+            const res = await axios.get(API_BASE + '/api/teaching_classes/' + currentClassId.value + '/students');
+            if (res.data.code === 200) {
+              rosterList.value = res.data.data || [];
+            } else {
+              ElMessage.error(res.data.message || '查询失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            rosterLoading.value = false;
+          }
+        }
+
+        async function addStudentToRoster() {
+          if (!rosterSelectedStudent.value) {
+            ElMessage.warning('请先选择学生');
+            return;
+          }
+          rosterAddLoading.value = true;
+          try {
+            const res = await axios.post(
+              API_BASE + '/api/teaching_classes/' + currentClassId.value + '/students',
+              { student_id: rosterSelectedStudent.value }
+            );
+            if (res.data.code === 200) {
+              ElMessage.success('学生已加入教学班');
+              rosterSelectedStudent.value = '';
+              await loadRoster();
+            } else {
+              ElMessage.error(res.data.message || '操作失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败');
+          } finally {
+            rosterAddLoading.value = false;
+          }
+        }
+
+        // [B8] 初始化加载默认面板数据
+        queryRecords();
+
+        // ========== D模块 大数据统计（新增） ==========
+
+        // ---------- 综合看板 ----------
+        async function loadStatsData() {
+          statLoading.value = true;
+          try {
+            // 院系统计
+            try {
+              const res = await axios.get(STAT_API + '/api/statistics/department');
+              if (res.data.code === 200) renderDept(res.data.data);
+              else ElMessage.warning('院系统计失败：' + (res.data.message || ''));
+            } catch (e) { ElMessage.error('院系统计网络请求失败'); }
+
+            // 缺勤TOP10
+            try {
+              const res = await axios.get(STAT_API + '/api/statistics/absent_top10');
+              if (res.data.code === 200) renderAbsent(res.data.data);
+              else ElMessage.warning('缺勤TOP10失败：' + (res.data.message || ''));
+            } catch (e) { ElMessage.error('缺勤TOP10网络请求失败'); }
+          } finally {
+            statLoading.value = false;
+          }
+        }
+
+        function renderDept(data) {
+          if (!deptChart) deptChart = echarts.init(document.getElementById('chart-dept'));
+          const xData = data.map(d => d.department);
+          const yData = data.map(d => d.avg_attendance_rate);
+          deptChart.setOption({
+            title: { text: '各院系平均出勤率' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: xData },
+            yAxis: { type: 'value', max: 100, name: '出勤率(%)' },
+            series: [{ type: 'bar', data: yData }]
+          });
+        }
+
+        function renderAbsent(data) {
+          if (!absentChart) absentChart = echarts.init(document.getElementById('chart-absent'));
+          const yData = data.map(d => `${d.student_id} ${d.name}`);
+          const xData = data.map(d => d.absent_count);
+          absentChart.setOption({
+            title: { text: '缺勤次数TOP10学生' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'value', name: '缺勤次数' },
+            yAxis: { type: 'category', data: yData },
+            series: [{ type: 'bar', data: xData }]
+          });
+        }
+
+        // ---------- 个人查询 ----------
+        async function loadStudentRecords() {
+          if (!studentQueryId.value.trim()) {
+            ElMessage.warning('请输入学号');
+            return;
+          }
+          try {
+            // 获取汇总
+            const sumRes = await axios.get(STAT_API + '/api/statistics/student/' + studentQueryId.value);
+            if (sumRes.data.code === 200) {
+              const data = sumRes.data.data;
+              studentSummary.attendance_rate = data.attendance_rate || 0;
+              studentSummary.total_sessions = data.total_sessions || 0;
+            } else {
+              ElMessage.warning(sumRes.data.message || '获取汇总失败');
+            }
+
+            // 获取明细记录
+            const recRes = await axios.get(STAT_API + '/api/statistics/student/' + studentQueryId.value + '/records');
+            if (recRes.data.code === 200) {
+              const records = recRes.data.data || [];
+              studentRecords.value = records;
+              if (!records.length) {
+                ElMessage.info('该学生暂无签到记录');
+                studentCourseStats.value = [];
+                studentAbsentList.value = [];
+                return;
+              }
+
+              // 按课程分组统计
+              const courseMap = new Map();
+              const absentList = [];
+
+              records.forEach(r => {
+                const course = r.course_name || '未知课程';
+                if (!courseMap.has(course)) {
+                  courseMap.set(course, { total: 0, valid: 0, absent: 0 });
+                }
+                const stat = courseMap.get(course);
+                stat.total += 1;
+                if (r.attendance_status === 'present' || r.attendance_status === 'late') {
+                  stat.valid += 1;
+                } else if (r.attendance_status === 'absent') {
+                  stat.absent += 1;
+                  absentList.push({
+                    course_name: course,
+                    session_date: r.session_date || (r.scan_time ? r.scan_time.slice(0,10) : '')
+                  });
+                }
+              });
+
+              const stats = [];
+              courseMap.forEach((value, key) => {
+                stats.push({
+                  course_name: key,
+                  total: value.total,
+                  valid: value.valid,
+                  absent: value.absent,
+                  rate: value.total ? Math.round((value.valid / value.total) * 100) : 0
+                });
+              });
+              stats.sort((a, b) => a.course_name.localeCompare(b.course_name));
+              studentCourseStats.value = stats;
+              studentAbsentList.value = absentList;
+            } else {
+              ElMessage.error(recRes.data.message || '获取记录失败');
+            }
+          } catch (e) {
+            ElMessage.error('网络请求失败，请确认后端已启动');
+          }
+        }
+
+        // ---------- 教学班统计 ----------
+        async function loadClassOptions() {
+          try {
+            const res = await axios.get(API_BASE + '/api/teaching_classes');
+            if (res.data.code !== 200) return;
+            const classes = res.data.data || [];
+            if (!classes.length) return;
+            // 获取课程名称
+            const courseIds = [...new Set(classes.map(c => c.course_id))];
+            const courseMap = {};
+            for (const cid of courseIds) {
+              try {
+                const cRes = await axios.get(API_BASE + '/api/courses/' + cid);
+                if (cRes.data.code === 200) courseMap[cid] = cRes.data.data.course_name || cid;
+              } catch (e) {}
+            }
+            classOptions.value = classes.map(c => ({
+              class_id: c.class_id,
+              course_name: courseMap[c.course_id] || c.course_id,
+              semester: c.semester
+            }));
+            if (classOptions.value.length) {
+              selectedClass.value = classOptions.value[0].class_id;
+              loadClassStats();
+            }
+          } catch (e) {
+            console.error('加载教学班选项失败', e);
+          }
+        }
+
+        async function loadClassStats() {
+          if (!selectedClass.value) return;
+          try {
+            // 1. 概览
+            const res1 = await axios.get(STAT_API + '/api/statistics/class/' + selectedClass.value + '/overview');
+            if (res1.data.code === 200) Object.assign(classOverview, res1.data.data);
+            
+            // 2. 趋势
+            const res2 = await axios.get(STAT_API + '/api/statistics/class/' + selectedClass.value + '/trend');
+            if (res2.data.code === 200) {
+              classTrendData.value = res2.data.data;
+              renderClassTrend();
+            }
+            
+            // 3. 课程对比（如果失败，不影响其他）
+            const cls = classOptions.value.find(c => c.class_id === selectedClass.value);
+            if (cls) {
+              selectedCourse.value = cls.course_id;
+              try {
+                const res3 = await axios.get(STAT_API + '/api/statistics/course/' + cls.course_id + '/classes');
+                if (res3.data.code === 200) renderCourseCompare(res3.data.data);
+              } catch (e) {
+                console.warn('课程对比加载失败，不影响其他功能:', e);
+              }
+            }
+
+            // 4. 缺勤学生列表（独立 try-catch，必须执行）
+            try {
+              const res4 = await axios.get(STAT_API + '/api/statistics/class/' + selectedClass.value + '/absent_students');
+              if (res4.data.code === 200) {
+                classAbsentStudents.value = res4.data.data || [];
+                console.log('✅ 缺勤学生列表已更新:', classAbsentStudents.value);
+              }
+            } catch (e) {
+              console.error('❌ 加载缺勤学生列表失败:', e);
+            }
+
+            // 5. 延迟调整图表尺寸（确保容器渲染完成）
+            nextTick(() => {
+              setTimeout(() => {
+                classTrendChart?.resize();
+                courseCompareChart?.resize();
+              }, 100);
+            });
+          } catch (e) {
+            console.error('加载班级统计失败:', e);
+          }
+        }
+
+        function renderClassTrend() {
+          if (!classTrendChart) classTrendChart = echarts.init(document.getElementById('chart-class-trend'));
+          const dates = classTrendData.value.map(d => d.date);
+          const rates = classTrendData.value.map(d => d.attendance_rate);
+          classTrendChart.setOption({
+            title: { text: '教学班各场次出勤率趋势' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: dates },
+            yAxis: { type: 'value', max: 100, name: '出勤率(%)' },
+            series: [{ type: 'line', data: rates, smooth: true }]
+          });
+        }
+
+        function renderCourseCompare(data) {
+          const container = document.getElementById('chart-course-compare');
+          if (!container) {
+            console.warn('chart-course-compare 容器不存在');
+            return;
+          }
+          if (!courseCompareChart) {
+            courseCompareChart = echarts.init(container);
+          }
+          const classes = data.map(d => d.class_id);
+          const rates = data.map(d => Math.min(d.attendance_rate || 0, 100));
+          courseCompareChart.setOption({
+            title: { text: '该课程下各教学班出勤率对比' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: classes },
+            yAxis: { type: 'value', max: 100, name: '出勤率(%)' },
+            series: [{ type: 'bar', data: rates }]
+          });
+        }
+
+        // ---------- 教师统计 ----------
+        async function loadTeacherOptions() {
+          try {
+            const res = await axios.get(STAT_API + '/api/teachers');
+            if (res.data.code === 200) {
+              teacherOptions.value = res.data.data || [];
+              if (teacherOptions.value.length) {
+                selectedTeacher.value = teacherOptions.value[0].teacher_id;
+                loadTeacherStats();
+              }
+            }
+          } catch (e) {
+            console.error('加载教师选项失败', e);
+          }
+        }
+
+        async function loadTeacherStats() {
+          if (!selectedTeacher.value) return;
+          try {
+            const res = await axios.get(STAT_API + '/api/statistics/teacher/' + selectedTeacher.value + '/summary');
+            if (res.data.code === 200) {
+              const data = res.data.data;
+              if (data) {
+                teacherSummary.avg_attendance_rate = data.avg_attendance_rate;
+                teacherSummary.total_classes = data.total_classes;
+                teacherSummary.class_list = data.class_list || [];
+                renderTeacherClasses();
+              }
+            }
+          } catch (e) {
+            console.error('加载教师统计失败', e);
+          }
+        }
+
+        function renderTeacherClasses() {
+          if (!teacherClassesChart) teacherClassesChart = echarts.init(document.getElementById('chart-teacher-classes'));
+          const classes = teacherSummary.class_list.map(c => c.class_id);
+          const rates = teacherSummary.class_list.map(c => c.attendance_rate);
+          teacherClassesChart.setOption({
+            title: { text: '教师各教学班出勤率' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: classes },
+            yAxis: { type: 'value', max: 100, name: '出勤率(%)' },
+            series: [{ type: 'bar', data: rates }]
+          });
+        }
+
+        // ---------- 时间趋势 ----------
+        async function loadTrend() {
+          if (!trendDateRange.value || trendDateRange.value.length !== 2) {
+            ElMessage.warning('请选择起止日期');
+            return;
+          }
+          try {
+            const res = await axios.get(STAT_API + '/api/statistics/trend/daily', {
+              params: {
+                start_date: trendDateRange.value[0],
+                end_date: trendDateRange.value[1]
+              }
+            });
+            if (res.data.code === 200) {
+              trendDailyData.value = res.data.data;
+              renderTrendDaily();
+            }
+          } catch (e) {
+            console.error('加载趋势失败', e);
+          }
+        }
+
+        function renderTrendDaily() {
+          if (!trendDailyChart) trendDailyChart = echarts.init(document.getElementById('chart-trend-daily'));
+          const dates = trendDailyData.value.map(d => d.date);
+          const rates = trendDailyData.value.map(d => d.attendance_rate);
+          trendDailyChart.setOption({
+            title: { text: '每日出勤率趋势' },
+            tooltip: { trigger: 'axis' },
+            xAxis: { type: 'category', data: dates },
+            yAxis: { type: 'value', max: 100, name: '出勤率(%)' },
+            series: [{ type: 'line', data: rates, smooth: true }]
+          });
+        }
+
+        // ---------- 异常预警 ----------
+        async function loadWarnings() {
+          try {
+            const res1 = await axios.get(STAT_API + '/api/statistics/warning/continuous_absent');
+            if (res1.data.code === 200) warningAbsent.value = res1.data.data || [];
+
+            const res2 = await axios.get(STAT_API + '/api/statistics/warning/invalid_signin');
+            if (res2.data.code === 200) warningInvalid.value = res2.data.data || [];
+
+            const resSess = await axios.get(API_BASE + '/api/sessions');
+            if (resSess.data.code === 200) sessionOptions.value = resSess.data.data || [];
+          } catch (e) {
+            console.error('加载预警失败', e);
+          }
+        }
+
+        async function loadSessionAbsent() {
+          if (!selectedSessionForAbsent.value) return;
+          try {
+            const res = await axios.get(STAT_API + '/api/statistics/session/' + selectedSessionForAbsent.value + '/absent_list');
+            if (res.data.code === 200) sessionAbsentList.value = res.data.data || [];
+          } catch (e) {
+            console.error('加载未签到名单失败', e);
+          }
+        }
+
+        // ---------- 选项卡切换 ----------
+        function onStatsTabChange(tab) {
+          nextTick(() => {
+            if (tab === 'overview') {
+              // 初始化或调整尺寸
+              if (!deptChart) {
+                deptChart = echarts.init(document.getElementById('chart-dept'));
+                renderDept(deptData);
+              } else {
+                deptChart.resize();
+              }
+              if (!absentChart) {
+                absentChart = echarts.init(document.getElementById('chart-absent'));
+                renderAbsent(absentData);
+              } else {
+                absentChart.resize();
+              }
+            }
+            if (tab === 'class') {
+              // 如果图表未初始化，则初始化；否则直接重绘
+              if (!classTrendChart) {
+                classTrendChart = echarts.init(document.getElementById('chart-class-trend'));
+                if (classTrendData.value.length) renderClassTrend();
+              } else {
+                classTrendChart.resize();
+              }
+              if (!courseCompareChart && document.getElementById('chart-course-compare') && selectedCourse.value) {
+                courseCompareChart = echarts.init(document.getElementById('chart-course-compare'));
+                const cls = classOptions.value.find(c => c.class_id === selectedClass.value);
+                if (cls) {
+                  axios.get(STAT_API + '/api/statistics/course/' + cls.course_id + '/classes')
+                    .then(res => { if (res.data.code === 200) renderCourseCompare(res.data.data); });
+                }
+              } else if (courseCompareChart) {
+                courseCompareChart.resize();
+              }
+            } else if (tab === 'teacher') {
+              // 如果教师选项为空，重新加载数据
+              if (teacherOptions.value.length === 0) {
+                loadTeacherOptions();
+              }
+              // 处理教师图表
+              if (!teacherClassesChart) {
+                teacherClassesChart = echarts.init(document.getElementById('chart-teacher-classes'));
+                // 如果已有数据则渲染
+                if (teacherSummary.class_list.length) {
+                  renderTeacherClasses();
+                }
+              } else {
+                // 关键：调整图表尺寸
+                teacherClassesChart.resize();
+              }
+            } else if (tab === 'trend') {
+              if (!trendDailyChart) {
+                trendDailyChart = echarts.init(document.getElementById('chart-trend-daily'));
+                if (trendDailyData.value.length) renderTrendDaily();
+              }
+            }
+          });
+        }
+
+        // ---------- 菜单切换触发统计加载 ----------
+        // 在 switchMenu 中调用 initStats 代替原来的 stats 占位
+        function initStats() {
+          // 先清除旧定时器
+          if (statTimer) clearInterval(statTimer);
+          // 加载综合看板
+          loadStatsData();
+          // 加载下拉选项（教学班、教师）
+          loadClassOptions();
+          loadTeacherOptions();
+          loadWarnings();
+          // 定时刷新综合看板（每5秒）
+          statTimer = setInterval(() => {
+            if (statsTab.value === 'overview') {
+              loadStatsData();
+            }
+          }, 5000);
+        }
+
+        // ---------- 窗口大小变化自适应 ----------
+        window.addEventListener('resize', () => {
+          deptChart?.resize();
+          absentChart?.resize();
+          classTrendChart?.resize();
+          courseCompareChart?.resize();
+          teacherClassesChart?.resize();
+          trendDailyChart?.resize();
+        });
+
+        return {
+          menuItems, activeMenu, currentTitle, switchMenu,
+          filterStudentId, filterStatus, records, tableLoading, queryRecords, exportRecordsExcel,
+          statusLabel, statusTagType,
+          editDialogVisible, editLoading, editRecord, editForm,
+          openEditDialog, submitEdit,
+          students, studentLoading, loadStudents,
+          studentDialogVisible, studentDialogTitle, studentForm, studentSubmitLoading,
+          openStudentDialog, submitStudent, deleteStudent,
+          handleImport, handleExport,
+          teachingClasses, classLoading, loadClasses,
+          classDialogVisible, classDialogTitle, classForm, classSubmitLoading,
+          openClassDialog, submitClass, deleteClass,
+          rosterDialogVisible, currentClassId, rosterList,
+          rosterAllStudents, rosterSelectedStudent, rosterLoading, rosterAddLoading,
+          openRosterDialog, loadRoster, addStudentToRoster,
+          // 新增统计相关（新增）
+          statLoading, statsTab,
+          classOptions, selectedClass, classOverview, classTrendData, selectedCourse,classAbsentStudents,
+          teacherOptions, selectedTeacher, teacherSummary,
+          trendDateRange, trendDailyData,
+          warningAbsent, warningInvalid, sessionOptions, selectedSessionForAbsent, sessionAbsentList,
+          studentQueryId, studentRecords, studentSummary, studentCourseStats,
+          studentAbsentList,loadStudentRecords,  
+          loadStatsData, loadClassStats, loadTeacherStats, loadTrend, loadWarnings, loadSessionAbsent,
+          onStatsTabChange,
+          // 新增教师管理
+          teachers, teacherLoading, loadTeachers,
+          teacherDialogVisible, teacherDialogTitle, teacherForm, teacherSubmitLoading,
+          openTeacherDialog, submitTeacher, deleteTeacher
+        };
+      }
+    });
+
+    // 注册 Element Plus 全部组件
+    app.use(ElementPlus);
+    app.mount('#app');
+  </script>
+</body>
+</html>
