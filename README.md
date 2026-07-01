@@ -131,7 +131,7 @@ cd code
 python demo_simulate.py
 ```
 
-`demo_data.sql + code/demo_simulate.py` 是最终演示数据方案，`demo_seed.sql` 仅为早期简化示例，不再需要。
+`demo_data.sql + code/demo_simulate.py` 是项目保留的演示数据方案。
 
 > `demo_simulate.py` 会清空请假申请、考勤记录和签到场次，只能在演示数据库执行，真实数据必须先备份。
 
